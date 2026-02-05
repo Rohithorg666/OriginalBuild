@@ -1,0 +1,87 @@
+image: ubuntu:latest
+
+pipelines:
+  default:
+    - step:
+        name: Start JAR and Call APIs
+        services:
+          - docker
+        
+        script:
+          # -------------------------------
+          # Install dependencies
+          # -------------------------------
+          - apt-get update
+          - apt-get install -y curl jq wget openjdk-11-jdk
+          - java -version
+
+          # -------------------------------
+          # Start Spring Boot JAR
+          # -------------------------------
+          - JAR_FILE="$BITBUCKET_CLONE_DIR/CICD_Fireflink.jar"
+          # - echo "Starting JAR: $JAR_FILE"
+          - nohup java -jar "$JAR_FILE" --fireflinkV3Uri=https://sg-app.fireflink.com/ > server.log 2>&1 &
+
+          # -------------------------------
+          # Wait until JAR is live
+          # -------------------------------
+          - echo "Waiting for service on localhost:8193..."
+          - |
+              for i in {1..30}; do
+                if curl -s http://localhost:8193 > /dev/null; then
+                  echo "Service started!";
+                  break;
+                fi;
+                echo "Waiting ($i/30)...";
+                sleep 2;
+              done
+
+          # -------------------------------
+          # API CALL #1 - Get execId
+          # -------------------------------
+          - echo "Calling API to trigger execution..."
+          - |
+              RESPONSE=$(curl --location "http://localhost:8193/v3/defaultMachine" \
+                --header "Content-Type: application/json" \
+                --data '{
+                  "userName":"preetham@fireflink.com",
+                  "password":"Preetham@1118",
+                  "licId":"LIC2026671",
+                  "projectId":"PJT1001",
+                  "suiteID":"SUITE_80edd2a0-8e79-46f1-acf1-c0a080d19a7d",
+                  "waitConfig":{
+                    "terminateScriptIfTakesMoreTimeInHrs":"1",
+                    "terminateSuiteIfTakesMoreTimeInHrs":"1",
+                    "implicitWaitInSeconds":"30",
+                    "explicitlyWait":"30",
+                    "delayBetweenStepsInSeconds":"1"
+                  }
+                }')
+
+          #- echo "Response: $RESPONSE"
+          - EXEC_ID=$(echo "$RESPONSE" | jq -r '.execId')
+          #- echo "Extracted execId: $EXEC_ID"
+          - echo "$EXEC_ID" > exec_id.txt
+
+          # -------------------------------
+          # API CALL #2 - Fetch Analytics
+          # -------------------------------
+          - echo "Fetching analytics..."
+          - |
+              PASS_PERCENTAGE=$(curl --location "http://localhost:8193/result/v3/percentage" \
+                --header "Content-Type: application/json" \
+                --data "{
+                  "userName":"preetham@fireflink.com",
+                  "password":"Preetham@1118",
+                  "projId":"PJT1001",
+                  "licId":"LIC2026671",
+                  "suiteId":"SUITE_80edd2a0-8e79-46f1-acf1-c0a080d19a7d",
+                  "execId":"$EXEC_ID"
+                }")
+
+          - echo "$PASS_PERCENTAGE" > percentage.txt
+
+        artifacts:
+          - exec_id.txt
+          - server.log
+          - percentage.txt
