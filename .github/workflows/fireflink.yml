@@ -31,7 +31,7 @@ jobs:
       - name: Start JAR
         run: |
           nohup java -jar CICD_Fireflink.jar \
-          --fireflinkV3Uri=https://sg-app.fireflink.com/ \
+          --fireflinkV3Uri=https://app.v3.fireflink.com/ \
           > server.log 2>&1 &
 
       # -------------------------------
