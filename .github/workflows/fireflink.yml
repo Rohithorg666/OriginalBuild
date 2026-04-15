@@ -58,11 +58,11 @@ jobs:
           RESPONSE=$(curl --location "http://localhost:8193/v3/defaultMachine" \
             --header "Content-Type: application/json" \
             --data '{
-              "userName":"marlaramakrishna125@gmail.com",
-              "password":"Kalyanbabu@96023",
-              "licId":"LIC16627",
-              "projectId":"PJT1142",
-              "suiteID":"SUITE_c61c0549-9ce5-4c50-9f01-0a60c63ac47d",
+              "userName":"rohith.ks@fireflink.com",
+              "password":"Password@123",
+              "licId":"LIC1026518",
+              "projectId":"PJT1008",
+              "suiteID":"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6",
               "waitConfig":{
                 "terminateScriptIfTakesMoreTimeInHrs":"1",
                 "terminateSuiteIfTakesMoreTimeInHrs":"1",
@@ -99,11 +99,11 @@ jobs:
           PASS_PERCENTAGE=$(curl --location "http://localhost:8193/result/v3/percentage" \
             --header "Content-Type: application/json" \
             --data "{
-              \"userName\":\"marlaramakrishna125@gmail.com\",
-              \"password\":\"Kalyanbabu@96023\",
-              \"projId\":\"PJT1142\",
-              \"licId\":\"LIC16627\",
-              \"suiteId\":\"SUITE_c61c0549-9ce5-4c50-9f01-0a60c63ac47d\",
+              \"userName\":\"rohith.ks@fireflink.com\",
+              \"password\":\"Password@123\",
+              \"projId\":\"PJT1008\",
+              \"licId\":\"LIC1026518\",
+              \"suiteId\":\"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6\",
               \"execId\":\"$EXEC_ID\"
             }")
 
