@@ -1,67 +1,67 @@
-name: FireFlink CI/CD
+name: Fireflink CI
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  run-fireflink:
+  run-jar-and-api:
     runs-on: ubuntu-latest
 
     steps:
       # -------------------------------
-      # Checkout code
+      # Checkout repo
       # -------------------------------
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       # -------------------------------
       # Install dependencies
       # -------------------------------
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y curl jq wget openjdk-11-jdk
           java -version
 
       # -------------------------------
-      # Start JAR
+      # Start Spring Boot JAR
       # -------------------------------
       - name: Start JAR
         run: |
-          nohup java -jar CICD_Fireflink.jar \
-          --fireflinkV3Uri=https://app.v3.fireflink.com/ \
-          > server.log 2>&1 &
+          JAR_FILE="${{ github.workspace }}/CICD_Fireflink.jar"
+          nohup java -jar "$JAR_FILE" --fireflinkV3Uri=https://app.v3.fireflink.com/ > server.log 2>&1 &
 
       # -------------------------------
-      # Wait for service
+      # Wait until JAR is live
       # -------------------------------
-      - name: Wait for Service
+      - name: Wait for service
         run: |
           echo "Waiting for service on localhost:8193..."
           for i in {1..30}; do
             if curl -s http://localhost:8193 > /dev/null; then
-              echo "Service started!";
-              break;
-            fi;
-            echo "Waiting ($i/30)...";
-            sleep 2;
+              echo "Service started!"
+              break
+            fi
+            echo "Waiting ($i/30)..."
+            sleep 2
           done
 
       # -------------------------------
-      # Trigger Execution API
+      # API CALL #1 - Get execId
       # -------------------------------
-      - name: Trigger FireFlink Execution
+      - name: Trigger Execution API
         run: |
-          RESPONSE=$(curl --location "http://localhost:8193/result/v3/percentage" \
+          RESPONSE=$(curl --location "http://localhost:8193/v3/defaultMachine" \
             --header "Content-Type: application/json" \
             --data '{
-              "userName":"${{ secrets.FF_USERNAME }}",
-              "password":"${{ secrets.FF_PASSWORD }}",
-              "licId":"LIC1026518",
-              "projectId":"PJT1008",
-              "suiteID":"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6",
+              "userName":"marlaramakrishna125@gmail.com",
+              "password":"Kalyanbabu@96023",
+              "licId":"LIC16627",
+              "projectId":"PJT1142",
+              "suiteID":"SUITE_c61c0549-9ce5-4c50-9f01-0a60c63ac47d",
               "waitConfig":{
                 "terminateScriptIfTakesMoreTimeInHrs":"1",
                 "terminateSuiteIfTakesMoreTimeInHrs":"1",
@@ -72,22 +72,23 @@ jobs:
             }')
 
           EXEC_ID=$(echo "$RESPONSE" | jq -r '.execId')
-          echo "EXEC_ID=$EXEC_ID" >> $GITHUB_ENV
           echo "$EXEC_ID" > exec_id.txt
 
       # -------------------------------
-      # Fetch Results
+      # API CALL #2 - Fetch Analytics
       # -------------------------------
       - name: Fetch Analytics
         run: |
+          EXEC_ID=$(cat exec_id.txt)
+
           PASS_PERCENTAGE=$(curl --location "http://localhost:8193/result/v3/percentage" \
             --header "Content-Type: application/json" \
             --data "{
-              \"userName\":\"${{ secrets.FF_USERNAME }}\",
-              \"password\":\"${{ secrets.FF_PASSWORD }}\",
-              \"projId\":\"PJT1008\",
-              \"licId\":\"LIC1026518\",
-              \"suiteId\":\"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6\",
+              \"userName\":\"marlaramakrishna125@gmail.com\",
+              \"password\":\"Kalyanbabu@96023\",
+              \"projId\":\"PJT1142\",
+              \"licId\":\"LIC16627\",
+              \"suiteId\":\"SUITE_c61c0549-9ce5-4c50-9f01-0a60c63ac47d\",
               \"execId\":\"$EXEC_ID\"
             }")
 
@@ -96,11 +97,11 @@ jobs:
       # -------------------------------
       # Upload artifacts
       # -------------------------------
-      - name: Upload Artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: fireflink-results
+          name: results
           path: |
             exec_id.txt
-            percentage.txt
             server.log
+            percentage.txt
