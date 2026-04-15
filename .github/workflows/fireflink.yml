@@ -1,0 +1,108 @@
+name: FireFlink CI/CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-fireflink:
+    runs-on: ubuntu-latest
+
+    steps:
+      # -------------------------------
+      # Checkout code
+      # -------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # -------------------------------
+      # Install dependencies
+      # -------------------------------
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq wget openjdk-11-jdk
+          java -version
+
+      # -------------------------------
+      # Start JAR
+      # -------------------------------
+      - name: Start JAR
+        run: |
+          nohup java -jar CICD_Fireflink.jar \
+          --fireflinkV3Uri=https://sg-app.fireflink.com/ \
+          > server.log 2>&1 &
+
+      # -------------------------------
+      # Wait for service
+      # -------------------------------
+      - name: Wait for Service
+        run: |
+          echo "Waiting for service on localhost:8193..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8193 > /dev/null; then
+              echo "Service started!";
+              break;
+            fi;
+            echo "Waiting ($i/30)...";
+            sleep 2;
+          done
+
+      # -------------------------------
+      # Trigger Execution API
+      # -------------------------------
+      - name: Trigger FireFlink Execution
+        run: |
+          RESPONSE=$(curl --location "http://localhost:8193/v3/defaultMachine" \
+            --header "Content-Type: application/json" \
+            --data '{
+              "userName":"${{ secrets.FF_USERNAME }}",
+              "password":"${{ secrets.FF_PASSWORD }}",
+              "licId":"LIC1026518",
+              "projectId":"
+PJT1008",
+              "suiteID":"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6",
+              "waitConfig":{
+                "terminateScriptIfTakesMoreTimeInHrs":"1",
+                "terminateSuiteIfTakesMoreTimeInHrs":"1",
+                "implicitWaitInSeconds":"30",
+                "explicitlyWait":"30",
+                "delayBetweenStepsInSeconds":"1"
+              }
+            }')
+
+          EXEC_ID=$(echo "$RESPONSE" | jq -r '.execId')
+          echo "EXEC_ID=$EXEC_ID" >> $GITHUB_ENV
+          echo "$EXEC_ID" > exec_id.txt
+
+      # -------------------------------
+      # Fetch Results
+      # -------------------------------
+      - name: Fetch Analytics
+        run: |
+          PASS_PERCENTAGE=$(curl --location "http://localhost:8193/result/v3/percentage" \
+            --header "Content-Type: application/json" \
+            --data "{
+              \"userName\":\"${{ secrets.FF_USERNAME }}\",
+              \"password\":\"${{ secrets.FF_PASSWORD }}\",
+              \"projId\":\"
+PJT1008\",
+              \"licId\":\"LIC1026518\",
+              \"suiteId\":\"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6\",
+              \"execId\":\"$EXEC_ID\"
+            }")
+
+          echo "$PASS_PERCENTAGE" > percentage.txt
+
+      # -------------------------------
+      # Upload artifacts
+      # -------------------------------
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: fireflink-results
+          path: |
+            exec_id.txt
+            percentage.txt
+            server.log
