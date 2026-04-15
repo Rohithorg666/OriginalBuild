@@ -54,7 +54,7 @@ jobs:
       # -------------------------------
       - name: Trigger FireFlink Execution
         run: |
-          RESPONSE=$(curl --location "http://localhost:8193/v3/defaultMachine" \
+          RESPONSE=$(curl --location "https://app.v3.fireflink.com/result/v3/percentage" \
             --header "Content-Type: application/json" \
             --data '{
               "userName":"${{ secrets.FF_USERNAME }}",
@@ -80,7 +80,7 @@ jobs:
       # -------------------------------
       - name: Fetch Analytics
         run: |
-          PASS_PERCENTAGE=$(curl --location "http://localhost:8193/result/v3/percentage" \
+          PASS_PERCENTAGE=$(curl --location "https://app.v3.fireflink.com/result/v3/percentage" \
             --header "Content-Type: application/json" \
             --data "{
               \"userName\":\"${{ secrets.FF_USERNAME }}\",
