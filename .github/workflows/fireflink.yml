@@ -60,8 +60,7 @@ jobs:
               "userName":"${{ secrets.FF_USERNAME }}",
               "password":"${{ secrets.FF_PASSWORD }}",
               "licId":"LIC1026518",
-              "projectId":"
-PJT1008",
+              "projectId":"PJT1008",
               "suiteID":"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6",
               "waitConfig":{
                 "terminateScriptIfTakesMoreTimeInHrs":"1",
@@ -86,8 +85,7 @@ PJT1008",
             --data "{
               \"userName\":\"${{ secrets.FF_USERNAME }}\",
               \"password\":\"${{ secrets.FF_PASSWORD }}\",
-              \"projId\":\"
-PJT1008\",
+              \"projId\":\"PJT1008\",
               \"licId\":\"LIC1026518\",
               \"suiteId\":\"SUITE_694951be-79f4-4d33-b2eb-38556ee443e6\",
               \"execId\":\"$EXEC_ID\"
