@@ -33,7 +33,7 @@ jobs:
         run: |
           JAR_FILE="${{ github.workspace }}/CICD_Fireflink.jar"
           echo "Starting JAR: $JAR_FILE"
-          nohup java -jar "$JAR_FILE" --fireflinkV3Uri=https://sg-app.fireflink.com/ > server.log 2>&1 &
+          nohup java -jar "$JAR_FILE" --fireflinkV3Uri=https://app.v3.fireflink.com/ > server.log 2>&1 &
 
       # -------------------------------
       # Wait until JAR is live
